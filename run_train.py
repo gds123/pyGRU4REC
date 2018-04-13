@@ -7,6 +7,9 @@ import torch
 
 
 def main():
+    """
+    读入参数、读入数据、设置参数。建立模型，训练
+    """
     
     # parse the nn arguments
     parser = argparse.ArgumentParser()
@@ -56,7 +59,7 @@ def main():
     time_key = 'TimeStamp'
 
     use_cuda = True
-    input_size = df_train[item_key].nunique()
+    input_size = df_train[item_key].nunique()  # 物品id总数
     hidden_size = args.hidden_size
     num_layers = args.num_layers
     output_size = input_size

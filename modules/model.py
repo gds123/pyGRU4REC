@@ -37,7 +37,8 @@ class GRU4REC:
             time_sort (bool): whether to ensure the the order of sessions is chronological (default: False)
             pretrained (modules.layer.GRU): pretrained GRU layer, if it exists (default: None)
         """
-        
+        # GRU opt loss
+
         # Initialize the GRU Layer
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -71,7 +72,7 @@ class GRU4REC:
         self.loss_fn = LossFunction(loss_type, use_cuda)
 
         # gradient clipping(optional)
-        self.clip_grad = clip_grad 
+        self.clip_grad = clip_grad
 
         # etc
         self.time_sort = time_sort
@@ -85,21 +86,24 @@ class GRU4REC:
             n_epochs (int): the number of training epochs to run
             save_dir (str): the path to save the intermediate trained models
             model_name (str): name of the model
+
         """
+        # 训练n_epochs次，每次打印loss并保存模型
+
         print(f'Model Name:{model_name}')
         # Time the training process
         start_time = time.time()
         for epoch in range(n_epochs):
-            loss = self.run_epoch()
+            loss = self.run_epoch()  # Run a single training epoch
             end_time = time.time()
             wall_clock = (end_time - start_time) / 60
             print(f'Epoch:{epoch+1:2d}/Loss:{loss:0.3f}/TrainingTime:{wall_clock:0.3f}(min)')
             start_time = time.time()
-            
+
             # Store the intermediate model
             save_dir = Path(save_dir)
             if not save_dir.exists(): save_dir.mkdir()
-            
+
             model_fname = f'{model_name}_{self.loss_type}_{self.optimizer_type}_{self.lr}_epoch{epoch+1:d}'
             torch.save(self.gru.state_dict(), save_dir/model_fname)
 
@@ -121,7 +125,7 @@ class GRU4REC:
                                    training=self.gru.training,
                                    time_sort=self.time_sort)
 
-        for input, target, hidden in loader.generate_batch():
+        for input, target, hidden in loader.generate_batch():  # (B,) (B,) (1, B, H)
             if self.use_cuda:
                 input = input.cuda()
                 target = target.cuda()
@@ -162,7 +166,7 @@ class GRU4REC:
         """
         # set the gru layer into inference mode
         self.gru.eval()
-        
+
         recalls = []
         mrrs = []
         hidden = self.gru.init_hidden().data
@@ -192,7 +196,7 @@ class GRU4REC:
 
         avg_recall = np.mean(recalls)
         avg_mrr = np.mean(mrrs)
-        
+
         # reset the gru to a training mode
         self.gru.train()
 
@@ -210,6 +214,9 @@ class GRU4REC:
             time_key (str): time ID
             item_key (str): item ID
         """
+        # 数据加上 item_idx
+        # names=['item_idx' ,'SessionId','ItemId','TimeStamp']
+        # 按session和time排序
 
         # Specify the identifiers
         self.session_key = session_key
@@ -245,6 +252,7 @@ class GRU4REC:
                       on=item_key,
                       how='inner')
 
+        # names=['item_idx' ,'SessionId','ItemId','TimeStamp']
         """
         Sort the df by time, and then by session ID. That is, df is sorted by session ID and
         clicks within a session are next to each other, where the clicks within a session are time-ordered.

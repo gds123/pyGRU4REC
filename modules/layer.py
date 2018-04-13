@@ -36,7 +36,7 @@ class GRU(nn.Module):
         self.use_cuda = use_cuda
         self.training = training
 
-        self.onehot_buffer = self.init_emb()  # the buffer where the one-hot encodings will be produced from
+        self.onehot_buffer = self.init_emb()  # the buffer where the one-hot encodings will be produced from     (b, c)
         self.emb_fn = emb.apply
         self.h2o = nn.Linear(hidden_size, output_size)
         self.tanh = nn.Tanh()
@@ -48,16 +48,16 @@ class GRU(nn.Module):
     def forward(self, input, target, hidden):
         '''
         Args:
-            embedded (B,): a batch of item indices from a session-parallel mini-batch.
+            input (B,): a batch of item indices from a session-parallel mini-batch.
             target (B,): torch.LongTensor of next item indices from a session-parallel mini-batch.
             
         Returns:
             (if self.mode == 'train')
             logit (B,B): Variable that stores the sampled logits for the next items in the session-parallel mini-batch
             (if self.mode == 'test')
-            logit (B,C): Variable that stores the logits for the next items in the session-parallel mini-batch
+            logit (B,C): Variable that stores the logits for the next items in the session-parallel mini-batch  C: num of all items
         '''
-        embedded = self.emb(input)
+        embedded = self.emb(input)  # item indices (B,) -> one-hot (B, C)
         if self.training:
             # Apply dropout to inputs when training
             p_drop = torch.Tensor(embedded.size(0), 1).fill_(1 - self.dropout_input)  # (B,1)
@@ -68,7 +68,7 @@ class GRU(nn.Module):
         embedded = embedded.unsqueeze(0)  # (1,B,C)
 
         # Go through the GRU layer
-        output, hidden = self.gru(embedded, hidden)  # (num_layers,B,H)
+        output, hidden = self.gru(embedded, hidden)  # hidden: (num_layers,B,H)  output: (seq_len,B,C)
 
         '''
         Sampling on the activation.
@@ -79,7 +79,7 @@ class GRU(nn.Module):
         logit = self.tanh(self.h2o(output))  # (B,C)
 
         if self.training:
-            logit = logit[:, target.view(-1)]  # (B,B). Sample outputs
+            logit = logit[:, target.view(-1)]  # (B,B). Sample outputs  (retrive all items in mini-batch)
 
         return logit, hidden
 
