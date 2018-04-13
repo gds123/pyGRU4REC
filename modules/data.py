@@ -42,20 +42,20 @@ class SessionDataLoader:
 
         # initializations
         df = self.df
-        click_offsets = self.get_click_offsets(df)
-        session_idx_arr = self.order_session_idx(df)
+        click_offsets = self.get_click_offsets(df)  # 每个session开始位置 wrt. df 数组
+        session_idx_arr = self.order_session_idx(df)  # seesion idx 数组
 
-        iters = np.arange(self.batch_size)
+        iters = np.arange(self.batch_size)  # 保存当前Batch中的session id
         maxiter = iters.max()
-        start = click_offsets[session_idx_arr[iters]]
+        start = click_offsets[session_idx_arr[iters]]  # 当前B个session的开始位置
         end = click_offsets[session_idx_arr[iters] + 1]
         finished = False
 
         while not finished:
-            minlen = (end - start).min()
+            minlen = (end - start).min()  # 找到前B个session中最短的长度
             # Item indices(for embedding) for clicks where the first sessions start
-            idx_target = df.item_idx.values[start]
-            for i in range(minlen - 1):
+            idx_target = df.item_idx.values[start]  # start位置对应的item
+            for i in range(minlen - 1):             # 用start迭代更新 idx_target idx_input (最短session用到倒数第二个item)
                 # Build inputs, targets, and hidden states
                 idx_input = idx_target
                 idx_target = df.item_idx.values[start + i + 1]
@@ -75,9 +75,9 @@ class SessionDataLoader:
                 #######################################################################################################
 
             # click indices where a particular session meets second-to-last element
-            start = start + (minlen - 1)
+            start = start + (minlen - 1)  # 对齐到最短session的最后item位置
             # see if how many sessions should terminate
-            mask = np.arange(len(iters))[(end - start) <= 1]
+            mask = np.arange(len(iters))[(end - start) <= 1]  # 到达末尾的session. 更换新的session到mask的位置
             for idx in mask:
                 maxiter += 1
                 if maxiter >= len(click_offsets) - 1:
@@ -103,9 +103,9 @@ class SessionDataLoader:
         """
 
         session_key = self.session_key
-        offsets = np.zeros(df[session_key].nunique() + 1, dtype=np.int32)
+        offsets = np.zeros(df[session_key].nunique() + 1, dtype=np.int32)  # （|session| + 1）
         # group & sort the df by session_key and get the offset values
-        offsets[1:] = df.groupby(session_key).size().cumsum()
+        offsets[1:] = df.groupby(session_key).size().cumsum()  # 每个session长度依次累加的数组
 
         return offsets
 

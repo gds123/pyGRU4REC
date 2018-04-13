@@ -94,7 +94,9 @@ class GRU4REC:
         # Time the training process
         start_time = time.time()
         for epoch in range(n_epochs):
-            loss = self.run_epoch()  # Run a single training epoch
+            loss = self.run_epoch()
+
+            # print time and loss
             end_time = time.time()
             wall_clock = (end_time - start_time) / 60
             print(f'Epoch:{epoch+1:2d}/Loss:{loss:0.3f}/TrainingTime:{wall_clock:0.3f}(min)')
@@ -109,7 +111,7 @@ class GRU4REC:
 
     def run_epoch(self):
         """ Run a single training epoch """
-        self.gru.train()
+        self.gru.train()  # 改变gru的 training参数
         # initialize
         mb_losses = []
         optimizer = self.optimizer
@@ -136,7 +138,7 @@ class GRU4REC:
             #############################################################
             loader.update_hidden(hidden.data)
             # Calculate the mini-batch loss
-            mb_loss = self.loss_fn(logit)
+            mb_loss = self.loss_fn(logit)  # logtis为样本。对角线为target
             mb_losses.append(mb_loss.data[0])
             # flush the gradient b/f backprop
             optimizer.zero_grad()
