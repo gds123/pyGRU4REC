@@ -38,7 +38,8 @@ def main():
     # Get the arguments
     args = parser.parse_args()    
 
-    PATH_DATA = Path('./data/rsc15/processed')
+    # PATH_DATA = Path('./data/rsc15/processed')
+    PATH_DATA = Path('/content/data')  # on colab
     PATH_MODEL = Path('./models')
     train = 'rsc15_train_tr.txt'
     test = 'rsc15_test.txt'
